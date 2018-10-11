@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:p="http://www.springframework.org/schema/p" 
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:hdp="http://www.springframework.org/schema/hadoop"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+    http://www.springframework.org/schema/context 
+    http://www.springframework.org/schema/context/spring-context-4.0.xsd 
+    http://www.springframework.org/schema/aop 
+    http://www.springframework.org/schema/aop/spring-aop-4.0.xsd 
+    http://www.springframework.org/schema/tx 
+    http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+    http://www.springframework.org/schema/task
+   	http://www.springframework.org/schema/task/spring-task-4.0.xsd
+   	http://www.springframework.org/schema/hadoop 
+	http://www.springframework.org/schema/hadoop/spring-hadoop-2.0.xsd
+	http://www.springframework.org/schema/util
+	http://www.springframework.org/schema/util/spring-util-4.0.xsd
+	http://code.alibabatech.com/schema/dubbo
+    http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
+    
+    <bean id="propertyConfig" class="com.ljc.mydemo.common.EncodePropertyFile">
+		<property name="locations">
+			<list>
+				<value>classpath:configure.properties</value>
+			</list>
+		</property>
+	</bean>
+	
+    <!-- 扫描包，排除controller -->
+    <context:component-scan base-package="com.ljc.mydemo" >
+    	<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+	
+	<!-- 写数据源 -->
+	<bean id="dataSourceRW" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass" value="${jdbcDriverClassRW}" />
+		<property name="jdbcUrl"
+			value="${jdbcUrlRW}?useUnicode=true&amp;characterEncoding=utf-8&amp;allowMultiQueries=true" />
+		<property name="user" value="${jdbcUserRW}" />
+		<property name="password" value="${jdbcPasswordRW}" />
+        <property name="minPoolSize"> 
+	   	     <value>20</value>
+	    </property>
+	    <property name="maxPoolSize"> 
+	    	 <value>800</value> 
+	    </property> 
+	    <property name="initialPoolSize"> 
+	    	 <value>20</value> 
+	    </property> 
+	    <property name="maxIdleTime"> 
+	         <value>600</value> 
+	    </property> 
+	    <property name="acquireIncrement"> 
+	     	 <value>5</value> 
+	    </property> 
+	    <property name="acquireRetryAttempts"> 
+	     	 <value>30</value> 
+	    </property> 
+	    <property name="acquireRetryDelay"> 
+	     	 <value>1000</value> 
+	    </property> 
+	    <property name="testConnectionOnCheckin"> 
+	     	 <value>false</value> 
+	    </property>
+	    <property name="automaticTestTable"> 
+	     	 <value>t_c3p0</value> 
+	    </property> 
+	    <property name="idleConnectionTestPeriod"> 
+	     	 <value>60</value> 
+	    </property>
+	   <property name="checkoutTimeout"> 
+	     	 <value>6000</value> 
+	    </property> 
+	</bean>
+	
+	<!-- 读数据源 -->
+	<bean id="dataSourceR" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass" value="${jdbcDriverClassR}" />
+		<property name="jdbcUrl"
+			value="${jdbcUrlR}?useUnicode=true&amp;characterEncoding=utf-8&amp;allowMultiQueries=true" />
+		<property name="user" value="${jdbcUserR}" />
+		<property name="password" value="${jdbcPasswordR}" />
+        <property name="minPoolSize"> 
+	   	     <value>20</value>
+	    </property>
+	    <property name="maxPoolSize"> 
+	    	 <value>800</value> 
+	    </property> 
+	    <property name="initialPoolSize"> 
+	    	 <value>20</value> 
+	    </property> 
+	    <property name="maxIdleTime"> 
+	         <value>600</value> 
+	    </property> 
+	    <property name="acquireIncrement"> 
+	     	 <value>5</value> 
+	    </property> 
+	    <property name="acquireRetryAttempts"> 
+	     	 <value>30</value> 
+	    </property> 
+	    <property name="acquireRetryDelay"> 
+	     	 <value>1000</value> 
+	    </property> 
+	    <property name="testConnectionOnCheckin"> 
+	     	 <value>false</value> 
+	    </property>
+	    <property name="automaticTestTable"> 
+	     	 <value>t_c3p0</value> 
+	    </property> 
+	    <property name="idleConnectionTestPeriod"> 
+	     	 <value>60</value> 
+	    </property>
+	   <property name="checkoutTimeout"> 
+	     	 <value>6000</value> 
+	    </property> 
+	</bean>
+	
+	<!-- 动态数据源 -->
+	<bean id="dynamicDataSource" class="com.ljc.mydemo.common.datasource.DynamicDataSource">
+		<!-- 通过key-value关联数据源 -->
+		<property name="targetDataSources">
+			<map>
+				<entry value-ref="dataSourceRW" key="dataSourceKeyRW"></entry>
+				<entry value-ref="dataSourceR" key="dataSourceKeyR"></entry>
+			</map>
+		</property>
+		<property name="defaultTargetDataSource" ref="dataSourceR" />
+	</bean>
+	<!-- 配置数据库连接池 -->
+	<bean id="dataSource2" class="com.alibaba.druid.pool.DruidDataSource">
+		<property name="filters" value="config,stat,log4j" />
+		<property name="url"
+			value="${jdbcUrlRW}?useUnicode=true&amp;characterEncoding=utf-8&amp;allowMultiQueries=true" />
+		<property name="username" value="${jdbcUserRW}" />
+		<property name="password" value="${jdbcPasswordRW}" />
+		<property name="driverClassName" value="${jdbcDriverClassRW}" />
+	</bean>
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource2"></property>
+	</bean>
+
+	<!-- 配置AOP -->
+	<aop:aspectj-autoproxy />
+
+	<!-- 配置sqlSessionFactory -->
+	<!-- <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dynamicDataSource"></property>
+		<property name="configLocation" value="classpath:mybatis-config.xml"></property>
+		自动扫描mapping.xml文件  
+        <property name="mapperLocations" value="classpath:com/ljc/mydemo/dao/mapper/*.xml"/>  
+	</bean>
+
+	配置事务
+	<bean id="txManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dynamicDataSource"></property>
+	</bean>
+
+	  DAO接口所在包名，Spring会自动查找其下的类  
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">  
+        <property name="basePackage" value="com.ljc.mydemo.dao"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>  
+    </bean> -->
+    
+    <!-- redis配置 -->
+	<!-- <bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">  
+        <property name="maxIdle" value="300" />
+        <property name="maxWaitMillis" value="1000" />
+        <property name="testOnBorrow" value="true" />
+    </bean>
+	单机
+    <bean id="connectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+    	<property name="hostName" value="${redisAddr}" />
+    	<property name="port" value="${redisPort}" />
+    	<property name="password" value="${redisAuth}" />
+    	<property name="poolConfig" ref="poolConfig" />
+    </bean> -->
+	
+	<!-- connectionFactory=connectionFactory为单机 -->
+	<!-- <bean id="redisTemplate" class="org.springframework.data.redis.core.StringRedisTemplate">
+        <property name="connectionFactory" ref="connectionFactory" />
+    </bean> -->
+    
+    <!-- <bean id="mydemoExceptionHandler" class="com.ljc.mydemo.exception.mydemoExceptionHandler"/> -->
+    
+    
+    
+    
+    
+    
+    
+    
+	<!-- 定义producer的参数 -->
+	<bean id="producerProperties" class="java.util.HashMap">
+		<constructor-arg>
+			<map>
+				<!-- 多个,分隔 -->
+				<entry key="bootstrap.servers"
+					value="192.168.22.100:9092" />
+				<entry key="group.id" value="0" />
+				<entry key="retries" value="1" />
+				<entry key="batch.size" value="16384" />
+				<entry key="linger.ms" value="1" />
+				<entry key="buffer.memory" value="33554432" />
+				<entry key="key.serializer"
+					value="org.apache.kafka.common.serialization.StringSerializer" />
+				<entry key="value.serializer"
+					value="org.apache.kafka.common.serialization.StringSerializer" />
+			</map>
+
+		</constructor-arg>
+	</bean>
+
+	<!-- 创建kafkatemplate需要使用的producerfactory bean -->
+	<bean id="producerFactory"
+		class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
+		<constructor-arg>
+			<ref bean="producerProperties" />
+		</constructor-arg>
+	</bean>
+
+	<!-- 创建kafkatemplate bean，使用的时候，只需要注入这个bean，即可使用template的send消息方法 -->
+	<bean id="kafkaTemplate" class="org.springframework.kafka.core.KafkaTemplate">
+		<constructor-arg ref="producerFactory" />
+		<constructor-arg name="autoFlush" value="true" />
+		<property name="defaultTopic" value="odd" />
+		<!-- <property name="producerListener" ref="producerListener"/> -->
+	</bean>
+
+	<!-- <bean id="producerListener" class="KafkaTest.KafkaProducerListener" 
+		/> -->
+
+
+
+
+
+	<!-- 定义consumer的参数 -->
+	<bean id="consumerProperties" class="java.util.HashMap">
+		<constructor-arg>
+			<map>
+				<entry key="bootstrap.servers" value="192.168.22.100:9092" />
+				<entry key="group.id" value="0" />
+				<entry key="enable.auto.commit" value="true" />
+				<entry key="auto.commit.interval.ms" value="1000" />
+				<entry key="session.timeout.ms" value="30000" />
+				<entry key="key.deserializer"
+					value="org.apache.kafka.common.serialization.StringDeserializer" />
+				<entry key="value.deserializer"
+					value="org.apache.kafka.common.serialization.StringDeserializer" />
+			</map>
+		</constructor-arg>
+	</bean>
+
+	<!-- 创建consumerFactory bean -->
+<!-- 	<bean id="consumerFactory"
+		class="org.springframework.kafka.core.DefaultKafkaConsumerFactory">
+		<constructor-arg>
+			<ref bean="consumerProperties" />
+		</constructor-arg>
+	</bean>
+
+	实际执行消息消费的类
+	<bean id="messageListernerConsumerService" class="com.ljc.mydemo.kafka.KafkaConsumerServer" />
+
+	消费者容器配置信息
+	<bean id="containerProperties"
+		class="org.springframework.kafka.listener.config.ContainerProperties">
+		<constructor-arg >
+			<array>
+		      <value>even</value>
+		      <value>odd</value>
+		    </array>
+		</constructor-arg>
+		<property name="messageListener" ref="messageListernerConsumerService" />
+	</bean>
+
+
+	创建messageListenerContainer bean，使用的时候，只需要注入这个bean
+	<bean id="messageListenerContainer"
+		class="org.springframework.kafka.listener.KafkaMessageListenerContainer"
+		init-method="doStart">
+		<constructor-arg ref="consumerFactory" />
+		<constructor-arg ref="containerProperties" />
+	</bean>
+
+     -->
+    
+    
+    
+</beans>
